@@ -6,7 +6,10 @@ class App extends Component {
       <div>
         <div className="div-board">
           <div className="row">
-            <Note />
+            <Note
+              title="Class Notes"
+              body="Use constructors when extending another class and needing to define new class properties"
+            />
           </div>
         </div>
         <div>
@@ -24,13 +27,13 @@ class App extends Component {
   }
 }
 
-function Note() {
+function Note({ title, body }) {
   return (
     <div className="col-sm-6">
       <div className="card card-view">
         <div className="card-body">
-          <h5 className="card-title">Note Title</h5>
-          <p>This is a very long note that we just made up</p>
+          <h5 className="card-title">{title}</h5>
+          <p>{body}</p>
           <button className="btn btn-info">Edit</button>
           <button className="btn btn-danger">Delete</button>
         </div>
