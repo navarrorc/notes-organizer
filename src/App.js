@@ -1,17 +1,20 @@
 import React, { Component } from "react";
+import { timingSafeEqual } from "crypto";
+import { runInThisContext } from "vm";
 
 class App extends Component {
   state = {
-    notes: [],
-    editMode: false
+    notes: []
   };
 
-  onClick = () => {
+  onSubmit = event => {
+    event.preventDefault(); // prevent page reload
     // add a new note
     var note = {
       id: Math.floor(Math.random() * 1001), // random number from 0 to 1000
       title: this.refs.titleContent.value,
-      body: this.refs.bodyContent.value
+      body: this.refs.bodyContent.value,
+      editMode: false
     };
 
     this.refs.titleContent.value = "";
@@ -26,16 +29,44 @@ class App extends Component {
   };
 
   deleteNote = id => {
-    let newNoteArr = this.state.notes;
-    newNoteArr.forEach((note, index) => {
-      // TODO: revisit and find a better way to delete the note from the notes array
-      if (id === note.id) {
-        newNoteArr.splice(index, 1);
-      }
+    let filteredNotes = this.state.notes.filter(note => {
+      return note.id !== id;
     });
+
     this.setState({
       // triggering the re-rendering of UI
-      notes: newNoteArr
+      notes: filteredNotes
+    });
+  };
+
+  getNote(id) {
+    // Helper function
+    return this.state.notes.find(note => note.id === id);
+  }
+
+  editNote = id => {
+    let matchingNote = this.getNote(id);
+
+    matchingNote.editMode = !matchingNote.editMode; // true or false
+
+    this.setState({
+      notes: this.state.notes
+    });
+  };
+
+  onTitleChange = (id, newValue) => {
+    let matchingNote = this.getNote(id);
+    matchingNote.title = newValue;
+    this.setState({
+      notes: this.state.notes
+    });
+  };
+
+  onBodyChange = (id, newValue) => {
+    let matchingNote = this.getNote(id);
+    matchingNote.body = newValue;
+    this.setState({
+      notes: this.state.notes
     });
   };
 
@@ -51,9 +82,20 @@ class App extends Component {
                   key={note.id}
                   title={note.title}
                   body={note.body}
-                  editMode={this.state.editMode}
+                  editMode={note.editMode}
                   onDelete={() => {
                     this.deleteNote(note.id);
+                  }}
+                  onEdit={() => {
+                    this.editNote(note.id);
+                  }}
+                  onTitleChange={event => {
+                    let newValue = event.target.value;
+                    this.onTitleChange(note.id, newValue);
+                  }}
+                  onBodyChange={event => {
+                    let newValue = event.target.value;
+                    this.onBodyChange(note.id, newValue);
                   }}
                 />
               ); //
@@ -63,16 +105,13 @@ class App extends Component {
         <div>
           <h3>Create a Note</h3>
           <label>Title:</label>
-          <form>
+          <form onSubmit={this.onSubmit}>
             <input ref="titleContent" type="text" required />
             <br />
             <label>Body:</label>
             <textarea ref="bodyContent" rows="5" required />
             <br />
-            <button
-              onClick={this.onClick}
-              className="btn btn-success add-button"
-            >
+            <button type="submit" className="btn btn-success add-button">
               Add
             </button>
           </form>
@@ -82,7 +121,15 @@ class App extends Component {
   }
 }
 
-function Note({ title, body, editMode, onDelete }) {
+function Note({
+  title,
+  body,
+  editMode,
+  onDelete,
+  onEdit,
+  onTitleChange,
+  onBodyChange
+}) {
   if (editMode === false) {
     return (
       <div className="col-sm-6">
@@ -90,7 +137,9 @@ function Note({ title, body, editMode, onDelete }) {
           <div className="card-body">
             <h5 className="card-title">{title}</h5>
             <p>{body}</p>
-            <button className="btn btn-info">Edit</button>
+            <button onClick={onEdit} className="btn btn-info">
+              Edit
+            </button>
             <button onClick={onDelete} className="btn btn-danger">
               Delete
             </button>
@@ -104,10 +153,14 @@ function Note({ title, body, editMode, onDelete }) {
         <div className="card card-view">
           <div className="card-body">
             {/* <h5 className="card-title">{title}</h5> */}
-            <input defaultValue={title} />
-            <textarea defaultValue={body} rows={5} />
-            <button className="btn btn-info">Edit</button>
-            <button className="btn btn-danger">Delete</button>
+            <input onChange={onTitleChange} value={title} />
+            <textarea onChange={onBodyChange} value={body} rows={5} />
+            <button onClick={onEdit} className="btn btn-success">
+              Save
+            </button>
+            <button onClick={onEdit} className="btn btn-secondary">
+              Cancel
+            </button>
           </div>
         </div>
       </div>
